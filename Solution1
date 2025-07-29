@@ -1,0 +1,45 @@
+from collections import defaultdict
+from itertools import combinations
+
+class Solution:
+    def countTrapezoids(self, points):
+        def gcd(a, b):
+            while b:
+                a, b = b, a % b
+            return a
+
+        def normalize(dx, dy):
+            if dx == 0:
+                return (0, 1)
+            if dy == 0:
+                return (1, 0)
+            sign = -1 if dx * dy < 0 else 1
+            dx, dy = abs(dx), abs(dy)
+            g = gcd(dx, dy)
+            return (sign * dx // g, dy // g)
+
+        n = len(points)
+        line_map = defaultdict(list)
+
+        # Store all lines between pairs of points with their slope
+        for i in range(n):
+            for j in range(i + 1, n):
+                x1, y1 = points[i]
+                x2, y2 = points[j]
+                dx = x2 - x1
+                dy = y2 - y1
+                slope = normalize(dx, dy)
+                line_map[slope].append((i, j))
+
+        trapezoids = set()
+
+        # For each group of lines with the same slope (i.e., parallel lines)
+        for slope, line_list in line_map.items():
+            for (a, b), (c, d) in combinations(line_list, 2):
+                ids = {a, b, c, d}
+                if len(ids) == 4:  # Ensure all four points are distinct
+                    # Convert list points to tuples for hashing
+                    quad = tuple(sorted([tuple(points[a]), tuple(points[b]), tuple(points[c]), tuple(points[d])]))
+                    trapezoids.add(quad)
+
+        return len(trapezoids)
