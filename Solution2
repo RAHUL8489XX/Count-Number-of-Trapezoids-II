@@ -1,0 +1,94 @@
+from collections import defaultdict
+
+class Solution:
+    def gcd(self, a, b):
+        while b:
+            a, b = b, a % b
+        return a
+
+    def countTrapezoids(self, points):
+        mp = defaultdict(list)
+        mp2 = defaultdict(lambda: defaultdict(int))
+        n = len(points)
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                dx = points[j][0] - points[i][0]
+                dy = points[j][1] - points[i][1]
+
+                if dx != 0 and dy != 0:
+                    g = self.gcd(abs(dx), abs(dy))
+                    dx //= g
+                    dy //= g
+                    if dx < 0:
+                        dx = -dx
+                        dy = -dy
+                elif dx == 0:
+                    dx, dy = 0, 1
+                else:
+                    dx, dy = 1, 0
+
+                key = str(dy) + "_" + str(dx)
+                c = dx * points[i][1] - dy * points[i][0]
+                mp[key].append((i, j, c))
+
+        ans = 0
+        for per in mp.values():
+            m = len(per)
+            if m < 2:
+                continue
+
+            total = m * (m - 1) // 2
+            deg = defaultdict(int)
+            for i, j, _ in per:
+                deg[i] += 1
+                deg[j] += 1
+            s = sum(v * (v - 1) // 2 for v in deg.values())
+
+            cnts = defaultdict(int)
+            deeg = defaultdict(lambda: defaultdict(int))
+            for i, j, c in per:
+                cnts[c] += 1
+                deeg[c][i] += 1
+                deeg[c][j] += 1
+
+            sm = sum(cnt * (cnt - 1) // 2 for cnt in cnts.values())
+            extra = sum(v * (v - 1) // 2 for d in deeg.values() for v in d.values())
+
+            ans += total - s - sm + extra
+
+        def subtract_overcounts():
+            cnt = 0
+            for center, lines in mp2.items():
+                total = 0
+                extr = 0
+                for count in lines.values():
+                    total += count
+                    extr += count * (count - 1) // 2
+                cnt += total * (total - 1) // 2 - extr
+            return cnt
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                mx = points[i][0] + points[j][0]
+                my = points[i][1] + points[j][1]
+                dx = points[j][0] - points[i][0]
+                dy = points[j][1] - points[i][1]
+
+                if dx == 0:
+                    dx, dy = 0, 1
+                elif dy == 0:
+                    dx, dy = 1, 0
+                else:
+                    g = self.gcd(abs(dx), abs(dy))
+                    dx //= g
+                    dy //= g
+                    if dx < 0:
+                        dx = -dx
+                        dy = -dy
+
+                center_key = str(mx) + "_" + str(my)
+                slope_key = str(dy) + "_" + str(dx)
+                mp2[center_key][slope_key] += 1
+
+        return ans - subtract_overcounts()
